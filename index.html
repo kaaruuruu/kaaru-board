@@ -1,11 +1,107 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>루루 게시판</title>
-  </head>
-  <body>
-    <h1>루루의 게시판에 어서오세요 💜</h1>
-    <p>첫 번째 게시글이 곧 나타날 거예요!</p>
-  </body>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>작은 게시판</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f6f6f6;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input, textarea, button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 1em;
+    }
+    .post {
+      background-color: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px #ccc;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <h1>작은 게시판</h1>
+  
+  <form id="postForm">
+    <input type="text" id="title" placeholder="제목" required />
+    <textarea id="content" placeholder="내용" required></textarea>
+    <button type="submit">작성하기</button>
+  </form>
+
+  <div id="posts"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+  <script>
+    // 🔧 Firebase 설정: 여기를 본인의 프로젝트 설정으로 바꿔주세요
+    const firebaseConfig = {
+      apiKey: "API_KEY",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const postForm = document.getElementById('postForm');
+    const postsDiv = document.getElementById('posts');
+
+    postForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const content = document.getElementById('content').value.trim();
+
+      if (!title || !content) return;
+
+      await db.collection('posts').add({
+        title,
+        content,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      postForm.reset();
+      loadPosts();
+    });
+
+    async function loadPosts() {
+      postsDiv.innerHTML = '';
+      const snapshot = await db.collection('posts').orderBy('timestamp', 'desc').get();
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const date = data.timestamp?.toDate()?.toLocaleString() || '시간 정보 없음';
+        postsDiv.innerHTML += `
+          <div class="post">
+            <strong>${data.title}</strong>
+            <p>${data.content}</p>
+            <div class="timestamp">${date}</div>
+          </div>
+        `;
+      });
+    }
+
+    loadPosts();
+  </script>
+</body>
 </html>
